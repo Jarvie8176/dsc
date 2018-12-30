@@ -1,0 +1,123 @@
+---
+title: "Linear Regression Modeling"
+author: "George Liu"
+date: "December 30, 2018"
+output: html_document
+---
+
+```{r}
+# Import the needed libraries
+library(ggplot2)
+library(GGally)
+library(car)
+```
+
+
+```{r}
+# Read in the data
+df1 <- read.csv('data1.csv', header=FALSE)
+df2 <- read.csv('data2.csv', header=FALSE)
+```
+
+
+```{r}
+# Rename columns
+names(df1) <- c('x1', 'x2', 'x3', 'y')
+names(df2) <- c('x1', 'x2', 'x3', 'y')
+```
+
+First, let's check the correlation between variables
+
+```{r}
+ggpairs(df1)
+```
+
+Interestingly, x1 seems to have a high correlation with y, while x2 and x3 may not be very helpful. 
+
+```{r}
+ggpairs(df2)
+```
+
+For this dataset, x1 and x2 are close to be perfectly correlated, so chances are we only need one of them, not both.
+
+
+Next, let's confirm the above finding using variance inflation factor (VIF).
+
+For df1:
+
+```{r}
+fit.all <- lm(y ~ ., data=df1)
+vif(fit.all)
+```
+
+Since all vif's are blow 4, we can keep all variables.
+
+
+For df2:
+
+```{r}
+#detach("package:usdm", unload=TRUE)
+#library(car)
+fit.all <- lm(y ~ ., data=df2)
+#detach("package:usdm", unload=TRUE)
+vif(fit.all)
+```
+
+It does confirm our previous finding that x1 and x2 are correlated. Since x2 has a higher corrleatin with the target variable, we'll remove x1 when building linear regression models.
+
+
+Let's now building the models. First for df1:
+
+```{r}
+fit.x1 <- lm(y ~ x1, data=df1)
+fit.all <- lm(y ~ ., data=df1)
+fit.step <- step(fit.all, direction = 'both', trace = 0)
+anova(fit.x1, fit.all, fit.step)
+
+```
+
+So, the best model is to use all the predictor variables which is significantly different than the single variable model. Let's also verfiy using adjusted R squared values.
+
+```{r}
+summary(fit.x1)
+summary(fit.step)
+```
+
+**That confirms the conclusion that the best model uses all predictor variables. As the p-value is much less than 0.05, we can say the model is statistically significant, meaning there is a significant relationship between the variables in the linear model.**
+
+
+Now for df2:
+
+```{r}
+fit.x1 <- lm(y ~ x1 + x3, data=df2)
+fit.x2 <- lm(y ~ x2 + x3, data=df2)
+fit.all <- lm(y ~ ., data=df2)
+fit.step <- step(fit.all, direction = 'both', trace = 0)
+anova(fit.x1, fit.x2, fit.all, fit.step)
+
+```
+
+This is interesting. On one hand, it does show that the models based on x1 and x2 are not significantly different; on the other hand, it seems all models are quite similar. Let's build individual models without the x1 variable:
+
+```{r}
+fit.x2 <- lm(y ~ x2, data=df2)
+fit.all <- lm(y ~ x2 + x3, data=df2)
+fit.step <- step(fit.all, direction = 'both', trace = 0)
+anova(fit.x2, fit.all, fit.step)
+```
+
+
+Great! It's indeed because of the multicollinearity that leads to some confusion. So x3 variable does offer value here. Now let's check using adjusted R squared value.
+
+```{r}
+summary(fit.x2)
+summary(fit.step)
+```
+
+**Again, it confirms that the best model uses both x2 and x3 as predictor variables. Also, the model is significant based on the p-value.**
+
+
+**Reference**
+
+- [How to test and avoid multicollinearity in mixed linear model?](https://stats.stackexchange.com/questions/82984/how-to-test-and-avoid-multicollinearity-in-mixed-linear-model)
+- [unable to find an inherited method for function 'vif' for signature '"integer"'](https://stackoverflow.com/questions/32158177/unable-to-find-an-inherited-method-for-function-vif-for-signature-integer)

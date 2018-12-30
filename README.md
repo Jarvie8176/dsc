@@ -1,0 +1,1 @@
+The "assignment.html" contains the data wrangling part for Question 1 and the answer for Question 2. The regression analysis for Question 1 can be found in the "regression.html" file. Correspondingly, the codes are in the "assignment.ipynb" file and and the "regression.rmd" file which can be opened correspondingly with Jupyter Notebook and RStudio.
